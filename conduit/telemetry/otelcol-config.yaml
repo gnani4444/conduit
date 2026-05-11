@@ -1,0 +1,51 @@
+# conduit/telemetry/otelcol-config.yaml
+# 05_TELEMETRY_AND_ADAPTERS.md §3 — Conduit local OTel Collector configuration
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  # Redact parameter values by default (privacy — 02_INTERCEPTION_SHIM.md §6)
+  attributes/redact_params:
+    actions:
+      - key: "conduit.params.raw"
+        action: delete
+      - key: "conduit.result.raw"
+        action: delete
+
+  # Enrich with conduit metadata
+  resource:
+    attributes:
+      - key: "conduit.version"
+        value: "0.1.0"
+        action: insert
+
+  # Batch for efficiency
+  batch:
+    timeout: 200ms
+    send_batch_size: 512
+
+exporters:
+  # Conduit internal data plane (SQLite writer)
+  otlphttp/conduit:
+    endpoint: "http://localhost:7431"
+    tls:
+      insecure: true
+
+  # Forward to user's existing backend (configured via env vars)
+  otlp/downstream:
+    endpoint: "${CONDUIT_DOWNSTREAM_ENDPOINT:-}"
+    headers:
+      authorization: "Bearer ${CONDUIT_DOWNSTREAM_TOKEN:-}"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [attributes/redact_params, resource, batch]
+      exporters: [otlphttp/conduit]

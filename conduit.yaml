@@ -1,0 +1,33 @@
+shim:
+  mode: "in_process"
+  timeout_ms: 5
+  fallback: "pass_through"
+  log_payloads: false
+
+validation:
+  hard_gate: false
+  auto_correct: true
+  correction_types: [type_coerce, field_rename, optional_strip]
+
+detection:
+  loop_threshold: 3
+  loop_window: 10
+  timeout_ms: 30000
+
+recovery:
+  enabled: true
+  actions: [retry, replan, escalate]
+  max_retries: 2
+
+telemetry:
+  otel_endpoint: "http://localhost:4317"
+  service_name: "conduit-agent"
+
+registry:
+  db_path: "./conduit.db"
+  mcp_manifest_paths: []   # Paths to MCP server manifests to auto-ingest on startup
+
+dashboard:
+  enabled: true
+  port: 7432
+  host: "127.0.0.1"

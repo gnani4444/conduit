@@ -1,0 +1,45 @@
+# Conduit sidecar topology — 01_ARCHITECTURE.md §6 Topology B
+#
+# Services:
+#   conduit   — intelligence plane + dashboard (port 7432) + ingest (port 7431)
+#   otelcol   — OpenTelemetry collector (grpc 4317, http 4318)
+#
+# Usage:
+#   docker-compose up
+#   # Then in your agent process:
+#   #   CONDUIT_OTEL_ENDPOINT=http://localhost:4317 python your_agent.py
+
+version: "3.9"
+
+services:
+  conduit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "7432:7432"   # Dashboard
+      - "7431:7431"   # Internal ingest endpoint
+    volumes:
+      - conduit_data:/data
+      - ./conduit.yaml:/app/conduit.yaml:ro
+    environment:
+      - CONDUIT_DB_PATH=/data/conduit.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7432/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otelcol/config.yaml"]
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - ./conduit/telemetry/otelcol-config.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      - conduit
+
+volumes:
+  conduit_data:
