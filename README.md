@@ -7,7 +7,7 @@ Conduit is a cross-framework AI agent observability and reliability shim. It int
 ## Quick Start (< 5 minutes)
 
 ```bash
-pip install conduit
+pip install conduit-ai-agents
 ```
 
 ### LangGraph (2 lines)
