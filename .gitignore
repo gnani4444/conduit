@@ -11,3 +11,5 @@ conduit.db
 .DS_Store
 .env
 seed_data.py
+review-code.md
+Design/
